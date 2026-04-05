@@ -377,7 +377,8 @@
             <div class="progress-fill" id="progressFill"></div>
           </div>
           <div class="progress-caption" id="progressCaption">
-            The house is watching with the patient hostility of a cupboard that knows it is smarter than you.
+            The house is watching with the patient and smug hostility of an object that thinks
+          it is smarter than you.
           </div>
         </div>
 
@@ -393,50 +394,8 @@
         </div>
       </section>
 
-      <section class="card">
-        <h2>H.O.M.E. Security Notes</h2>
-        <p class="small">
-          Correct sequence is enforced one object at a time. A valid object scanned too early is still treated as a failure.
-        </p>
-
-        <ol class="sequence-list">
-          <li>Deer</li>
-          <li>Snow</li>
-          <li>Plaice</li>
-          <li>Home</li>
-        </ol>
-
-        <div class="archive-entry">
-          <strong>Hint object:</strong> Beetlejuice jar. This does not advance the sequence.
-          It merely advises that some phrases should be said <strong>three times</strong>.
-        </div>
-
-        <div class="archive-entry">
-          <strong>Penalty profile:</strong> failed scans trigger forceful correction.
-          Standard output: <strong>6d10 force damage</strong> and sequence reset.
-        </div>
-
-        <div class="archive-entry">
-          <strong>DM note:</strong> when the final scan succeeds, the page announces ritual readiness.
-          That is your cue for the players to say the phrase three times out loud.
-        </div>
-
-        <div id="resultBox" class="result"></div>
-      </section>
-    </div>
-
-    <section class="card" style="margin-top:1rem;">
-      <h2>Registered Objects</h2>
-      <p class="small">
-        Approved objects: deer, snowflake in a jar, plaice, house model.
-        Hint object: Beetlejuice jar.
-        Hostile or misleading objects may include sunflower, haddock, red herring, homing pigeon, snow globe, mirror.
-      </p>
-      <div class="note">
-        Program NFC tags with URLs like <code>?tag=deer</code>, <code>?tag=snow</code>, <code>?tag=plaice</code>,
-        <code>?tag=home</code>, <code>?tag=beetlejuice</code>, and your trap objects as needed.
-      </div>
-    </section>
+  
+  
 
     <div class="footer-whimsy">
       <div class="glyphs">🏠 ✶ 🦌 ✦ ❄ ✧ 🐟 ✶</div>
@@ -486,7 +445,6 @@
           A plaque on the base reads:
           <strong>“Final word: HOME.”</strong><br><br>
           The roof creaks and whispers:
-          <em>“There’s no place like it.”</em>
         `
       },
       beetlejuice: {
@@ -862,5 +820,3 @@
   </script>
 </body>
 </html>
-
-One tiny design note: right now trap objects are added to the “Recovered scan records” list. If you want that list to show only useful scans, I can trim that so the page keeps its mouth shut about the false objects.
