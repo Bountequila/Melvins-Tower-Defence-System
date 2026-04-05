@@ -58,6 +58,7 @@
     .container {
       width: min(1040px, calc(100% - 2rem));
       margin: 2rem auto 4rem;
+      transition: transform 0.15s ease;
     }
 
     .banner {
@@ -311,10 +312,102 @@
     .muted-inline {
       color: var(--muted);
     }
+
+    .shock-flash {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 40, 70, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9997;
+    }
+
+    .shock-flash.show {
+      animation: flashPulse 0.55s ease;
+    }
+
+    @keyframes flashPulse {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .shake {
+      animation: screenShake 0.4s ease;
+    }
+
+    @keyframes screenShake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-10px, 5px); }
+      40% { transform: translate(9px, -6px); }
+      60% { transform: translate(-6px, 4px); }
+      80% { transform: translate(6px, -4px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .damage-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 4, 16, 0.72);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .damage-overlay.show {
+      opacity: 1;
+    }
+
+    .damage-box {
+      padding: 1.2rem 1.6rem;
+      border-radius: 24px;
+      border: 2px solid rgba(255, 120, 145, 0.45);
+      background: rgba(50, 14, 27, 0.88);
+      box-shadow: 0 0 28px rgba(255, 80, 120, 0.28);
+      max-width: 90vw;
+    }
+
+    .damage-label {
+      font-size: 1rem;
+      letter-spacing: 0.12rem;
+      text-transform: uppercase;
+      color: #ffd7df;
+      margin-bottom: 0.35rem;
+    }
+
+    .damage-number {
+      font-size: clamp(3rem, 10vw, 5.5rem);
+      line-height: 1;
+      font-weight: bold;
+      color: #ff6f8d;
+      text-shadow: 0 0 24px rgba(255, 60, 100, 0.55);
+    }
+
+    .damage-subtext {
+      margin-top: 0.45rem;
+      font-size: 1rem;
+      color: #ffe4ea;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="shockFlash" class="shock-flash"></div>
+
+  <div id="damageOverlay" class="damage-overlay">
+    <div class="damage-box">
+      <div class="damage-label">H.O.M.E. Strike</div>
+      <div class="damage-number" id="damageNumber">0</div>
+      <div class="damage-subtext" id="damageSubtext">force damage</div>
+    </div>
+  </div>
+
+  <div class="container" id="mainContainer">
     <section class="banner">
       <h1>H.O.M.E. Security Console</h1>
       <p class="subtitle">
@@ -370,7 +463,7 @@
       <section class="card">
         <h2>H.O.M.E. Response Log</h2>
         <p class="small">
-          You are not dreaming. Please do not wake up.
+          Warning: you are not asleep do not try to wake up.
         </p>
         <div id="resultBox" class="result info">
           House audio is currently dormant. Tap <strong>Enable House Audio</strong> once to wake it up.
@@ -563,6 +656,11 @@
     const progressCaption = document.getElementById("progressCaption");
     const resetButton = document.getElementById("resetButton");
     const enableAudioButton = document.getElementById("enableAudioButton");
+    const mainContainer = document.getElementById("mainContainer");
+    const damageOverlay = document.getElementById("damageOverlay");
+    const damageNumber = document.getElementById("damageNumber");
+    const damageSubtext = document.getElementById("damageSubtext");
+    const shockFlash = document.getElementById("shockFlash");
 
     const sfx = {
       correct: document.getElementById("sfx-correct"),
@@ -616,9 +714,28 @@
       if (!getAudioEnabled()) return;
       const sound = sfx[name];
       if (!sound) return;
-
       sound.currentTime = 0;
       sound.play().catch(() => {});
+    }
+
+    function triggerShock(damage, extraText = "force damage") {
+      damageNumber.textContent = damage;
+      damageSubtext.textContent = extraText;
+
+      mainContainer.classList.remove("shake");
+      void mainContainer.offsetWidth;
+      mainContainer.classList.add("shake");
+
+      shockFlash.classList.remove("show");
+      void shockFlash.offsetWidth;
+      shockFlash.classList.add("show");
+
+      damageOverlay.classList.add("show");
+
+      setTimeout(() => {
+        damageOverlay.classList.remove("show");
+        mainContainer.classList.remove("shake");
+      }, 950);
     }
 
     function getFoundTags() {
@@ -744,7 +861,6 @@
       if (currentTag === expectedTag) {
         addFoundTag(currentTag);
         setSequenceIndex(currentIndex + 1);
-        playSound("correct");
 
         statusLabel.textContent = `Approved object scanned: ${currentTag}`;
         clueContent.innerHTML = `
@@ -765,6 +881,7 @@
             `
           );
         } else {
+          playSound("correct");
           clearLastResult();
           resultBox.className = "result";
           resultBox.innerHTML = "";
@@ -776,6 +893,7 @@
       const damage = rollDamage();
       resetSequence();
       playSound("wrong");
+      triggerShock(damage.total, "force damage");
 
       const wrongOrderMessages = {
         deer: `
@@ -822,6 +940,13 @@
       addFoundTag(currentTag);
       playSound("trap");
 
+      let extraEffect = "force damage";
+      if (currentTag === "clock") {
+        extraEffect = "force damage • deafened for 1 minute";
+      }
+
+      triggerShock(damage.total, extraEffect);
+
       statusLabel.textContent = `Hostile object scanned: ${currentTag}`;
 
       clueContent.innerHTML = `
@@ -834,9 +959,9 @@
         damageSpan.textContent = `${damage.total} (${damage.rolls.join(" + ")})`;
       }
 
-      let extraEffect = "";
+      let extraResult = "";
       if (currentTag === "clock") {
-        extraEffect = `<br><strong>Additional effect:</strong> Deafened for 1 minute.`;
+        extraResult = `<br><strong>Additional effect:</strong> Deafened for 1 minute.`;
       }
 
       renderResult(
@@ -844,7 +969,7 @@
         `
           <strong>Sequence failure.</strong><br><br>
           H.O.M.E. has issued a forceful correction via <strong>${currentTag}</strong>.<br><br>
-          <strong>Damage:</strong> ${damage.total} force damage (${damage.rolls.join(" + ")}).${extraEffect}<br>
+          <strong>Damage:</strong> ${damage.total} force damage (${damage.rolls.join(" + ")}).${extraResult}<br>
           <strong>Status:</strong> sequence reset to 0.
         `
       );
