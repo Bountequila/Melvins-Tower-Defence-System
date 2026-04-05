@@ -308,35 +308,8 @@
       margin: 1rem 0;
     }
 
-    .archive-entry {
-      padding: 0.7rem 0.85rem;
-      background: rgba(255,255,255,0.04);
-      border: 1px dashed rgba(255,255,255,0.12);
-      border-radius: 14px;
-      margin-top: 0.7rem;
-    }
-
-    .archive-entry strong {
-      color: #ffe59c;
-    }
-
-    .sequence-list {
-      margin: 0.7rem 0 0;
-      padding-left: 1.25rem;
-      color: #f1e7c6;
-      line-height: 1.7;
-    }
-
     .muted-inline {
       color: var(--muted);
-    }
-
-    code {
-      background: rgba(255,255,255,0.07);
-      border-radius: 8px;
-      padding: 0.12rem 0.35rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.95em;
     }
   </style>
 </head>
@@ -346,7 +319,7 @@
       <h1>H.O.M.E. Security Console</h1>
       <p class="subtitle">
         Security system: <strong>H.O.M.E.</strong> <span class="muted-inline">(Hostile Occupancy Management &amp; Enforcement)</span>.
-        Occupant: <strong>Melvin, Wild Archmage </strong>.
+        Occupant: <strong>Melvin, Wild Archmage</strong>.
         Current issue: wizard trapped in his own extra-dimensional cupboard again.
       </p>
     </section>
@@ -377,12 +350,12 @@
             <div class="progress-fill" id="progressFill"></div>
           </div>
           <div class="progress-caption" id="progressCaption">
-            The house is watching with the patient and smug hostility of an object that thinks
-          it is smarter than you.
+            The house is watching with the patient and smug hostility of an object that thinks it is smarter than you.
           </div>
         </div>
 
         <div class="button-row">
+          <button id="enableAudioButton">Enable House Audio</button>
           <button id="resetButton" class="danger-button">Reset Investigation</button>
         </div>
 
@@ -394,14 +367,39 @@
         </div>
       </section>
 
-  
-  
+      <section class="card">
+        <h2>H.O.M.E. Response Log</h2>
+        <p class="small">
+          Correct sequence: <strong>deer → snow → plaice → home</strong>.  
+          Hint objects do not advance or reset the sequence. Trap objects do.
+        </p>
+        <div id="resultBox" class="result info">
+          House audio is currently dormant. Tap <strong>Enable House Audio</strong> once to wake it up.
+        </div>
+      </section>
+    </div>
 
     <div class="footer-whimsy">
       <div class="glyphs">🏠 ✶ 🦌 ✦ ❄ ✧ 🐟 ✶</div>
       Registry maintained reluctantly by the Society for Arcane Domestic Recovery
     </div>
   </div>
+
+  <audio id="sfx-correct" preload="auto">
+    <source src="audio/correct.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-wrong" preload="auto">
+    <source src="audio/wrong.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-trap" preload="auto">
+    <source src="audio/trap.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-hint" preload="auto">
+    <source src="audio/hint.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-unlock" preload="auto">
+    <source src="audio/unlock.mp3" type="audio/mpeg">
+  </audio>
 
   <script>
     const sequence = ["deer", "snow", "plaice", "home"];
@@ -444,7 +442,7 @@
           The tiny model house shifts subtly, as if every room has decided to cooperate for once.<br><br>
           A plaque on the base reads:
           <strong>“HOME”</strong><br><br>
-          The roof creaks and whispers:
+          The roof creaks and whispers.
         `
       },
       beetlejuice: {
@@ -520,6 +518,28 @@
           Your reflection steps out of the mirror, looks deeply disappointed, and punches you with the force of accumulated poor decisions.<br><br>
           <strong>Take <span data-damage></span> force damage. Sequence reset.</strong>
         `
+      },
+      teapot: {
+        type: "trap",
+        title: "Teapot Security Response",
+        body: `
+          <strong>H.O.M.E. SECURITY RESPONSE</strong><br>
+          Beverage vessel misread as approved domestic input.<br><br>
+          The teapot lid rattles once. Then twice. Then it erupts into a shrieking cloud of vicious bats that were apparently being stored in steeping formation.<br><br>
+          They buffet you from every angle with wings, claws, outrage, and teacup-adjacent spite.<br><br>
+          <strong>Take <span data-damage></span> force damage. Sequence reset.</strong>
+        `
+      },
+      clock: {
+        type: "trap",
+        title: "Clock Security Response",
+        body: `
+          <strong>H.O.M.E. SECURITY RESPONSE</strong><br>
+          Chronometric object rejected.<br><br>
+          The clock draws in a breath it should not physically possess, then releases a single catastrophic chime that hits you like a cathedral being dropped directly onto your ears.<br><br>
+          The blast of force leaves your bones rattling and your hearing replaced by a bright, hateful ringing.<br><br>
+          <strong>Take <span data-damage></span> force damage and be deafened for 1 minute. Sequence reset.</strong>
+        `
       }
     };
 
@@ -529,6 +549,7 @@
       localStorage.removeItem("melvinFoundTags");
       localStorage.removeItem("melvinSequenceIndex");
       localStorage.removeItem("melvinLastResult");
+      localStorage.removeItem("melvinAudioEnabled");
     }
 
     const tag = params.get("tag");
@@ -542,6 +563,64 @@
     const progressFill = document.getElementById("progressFill");
     const progressCaption = document.getElementById("progressCaption");
     const resetButton = document.getElementById("resetButton");
+    const enableAudioButton = document.getElementById("enableAudioButton");
+
+    const sfx = {
+      correct: document.getElementById("sfx-correct"),
+      wrong: document.getElementById("sfx-wrong"),
+      trap: document.getElementById("sfx-trap"),
+      hint: document.getElementById("sfx-hint"),
+      unlock: document.getElementById("sfx-unlock")
+    };
+
+    function getAudioEnabled() {
+      return localStorage.getItem("melvinAudioEnabled") === "true";
+    }
+
+    function setAudioEnabled(value) {
+      localStorage.setItem("melvinAudioEnabled", value ? "true" : "false");
+    }
+
+    function updateAudioButton() {
+      if (getAudioEnabled()) {
+        enableAudioButton.textContent = "House Audio Enabled";
+        enableAudioButton.disabled = true;
+      } else {
+        enableAudioButton.textContent = "Enable House Audio";
+        enableAudioButton.disabled = false;
+      }
+    }
+
+    async function enableAudio() {
+      for (const sound of Object.values(sfx)) {
+        if (!sound) continue;
+        try {
+          sound.volume = 0;
+          await sound.play();
+          sound.pause();
+          sound.currentTime = 0;
+          sound.volume = 1;
+        } catch (_) {}
+      }
+      setAudioEnabled(true);
+      updateAudioButton();
+      renderResult(
+        "info",
+        `
+          <strong>House audio awakened.</strong><br><br>
+          H.O.M.E. is now cleared to chime, shriek, slam, and generally overreact to your choices.
+        `
+      );
+    }
+
+    function playSound(name) {
+      if (!getAudioEnabled()) return;
+      const sound = sfx[name];
+      if (!sound) return;
+
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    }
 
     function getFoundTags() {
       try {
@@ -636,7 +715,7 @@
     }
 
     function renderProgress() {
-      const index = getSequenceIndex();
+      const index = Math.min(getSequenceIndex(), sequence.length);
       const total = sequence.length;
       const percent = Math.round((index / total) * 100);
 
@@ -666,6 +745,7 @@
       if (currentTag === expectedTag) {
         addFoundTag(currentTag);
         setSequenceIndex(currentIndex + 1);
+        playSound("correct");
 
         statusLabel.textContent = `Approved object scanned: ${currentTag}`;
         clueContent.innerHTML = `
@@ -674,6 +754,7 @@
         `;
 
         if (currentIndex + 1 === sequence.length) {
+          playSound("unlock");
           renderResult(
             "success",
             `
@@ -695,6 +776,7 @@
 
       const damage = rollDamage();
       resetSequence();
+      playSound("wrong");
 
       const wrongOrderMessages = {
         deer: `
@@ -739,6 +821,7 @@
       const damage = rollDamage();
       resetSequence();
       addFoundTag(currentTag);
+      playSound("trap");
 
       statusLabel.textContent = `Hostile object scanned: ${currentTag}`;
 
@@ -752,12 +835,17 @@
         damageSpan.textContent = `${damage.total} (${damage.rolls.join(" + ")})`;
       }
 
+      let extraEffect = "";
+      if (currentTag === "clock") {
+        extraEffect = `<br><strong>Additional effect:</strong> Deafened for 1 minute.`;
+      }
+
       renderResult(
         "fail",
         `
           <strong>Sequence failure.</strong><br><br>
           H.O.M.E. has issued a forceful correction via <strong>${currentTag}</strong>.<br><br>
-          <strong>Damage:</strong> ${damage.total} force damage (${damage.rolls.join(" + ")}).<br>
+          <strong>Damage:</strong> ${damage.total} force damage (${damage.rolls.join(" + ")}).${extraEffect}<br>
           <strong>Status:</strong> sequence reset to 0.
         `
       );
@@ -766,6 +854,7 @@
     function processHintScan(currentTag) {
       addFoundTag(currentTag);
       statusLabel.textContent = `Hint object scanned: ${currentTag}`;
+      playSound("hint");
 
       clueContent.innerHTML = `
         <p class="clue-title">${clues[currentTag].title}</p>
@@ -803,6 +892,8 @@
       renderProgress();
     }
 
+    enableAudioButton.addEventListener("click", enableAudio);
+
     resetButton.addEventListener("click", () => {
       const confirmed = confirm("Warning: This will convince the house you were never here. Continue?");
       if (!confirmed) return;
@@ -813,6 +904,7 @@
       window.location.href = window.location.pathname;
     });
 
+    updateAudioButton();
     renderFoundTags();
     renderProgress();
     renderStoredResultIfAny();
